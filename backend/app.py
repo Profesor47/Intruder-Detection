@@ -52,16 +52,22 @@ class MockStreamService:
 class MockDatabaseService:
     """Placeholder for database service"""
     def get_alerts(self, limit=50):
-        return [
-            {"alert_id": "1", "detection_id": "det_1", "alert_type": "unknown_person", "status": "new", "created_at": datetime.now().isoformat()},
-            {"alert_id": "2", "detection_id": "det_2", "alert_type": "motion_detected", "status": "new", "created_at": datetime.now().isoformat()}
-        ]
+        return {
+            "alerts": [
+                {"id": "1", "type": "unknown_person", "timestamp": datetime.now().isoformat(), "confidence": 0.95},
+                {"id": "2", "type": "motion_detected", "timestamp": datetime.now().isoformat(), "confidence": 0.87}
+            ],
+            "total": 2
+        }
     
     def get_detections(self, limit=100, offset=0, person_id=None):
-        return [
-            {"detection_id": "1", "person_id": person_id or "unknown", "face_confidence": 0.92, "detection_type": "known", "timestamp": datetime.now().isoformat()},
-            {"detection_id": "2", "person_id": person_id or "guest", "face_confidence": 0.88, "detection_type": "known", "timestamp": datetime.now().isoformat()}
-        ]
+        return {
+            "detections": [
+                {"id": "1", "person_id": person_id or "unknown", "confidence": 0.92, "timestamp": datetime.now().isoformat()},
+                {"id": "2", "person_id": person_id or "guest", "confidence": 0.88, "timestamp": datetime.now().isoformat()}
+            ],
+            "total": 2
+        }
     
     def count_detections(self):
         return 2
