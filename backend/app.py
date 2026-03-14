@@ -3,7 +3,7 @@ GUARDZILLA - Modern AI-Powered Security System
 FastAPI Backend Server for Real-time Face Detection, Recognition, and Tracking
 """
 
-from fastapi import FastAPI, WebSocket, UploadFile, File, HTTPException, Depends, BackgroundTasks
+from fastapi import FastAPI, WebSocket, UploadFile, File, HTTPException, Depends, BackgroundTasks, Query
 from fastapi.responses import StreamingResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -137,10 +137,11 @@ async def lifespan(app: FastAPI):
         logger.info("✓ Face recognizer loaded")
         
         intruder_tracker = IntruderTracker(
-            frame_width=settings.VIDEO_WIDTH,
-            frame_height=settings.VIDEO_HEIGHT
+        max_distance=100,
+        max_age=30,
+        min_hits=3
         )
-        logger.info("✓ Intruder tracker initialized")
+        logger.info("? Intruder tracker initialized")
         
         # Initialize motor controller
         motor_controller = MotorController(
@@ -286,7 +287,7 @@ async def video_stream():
 # ==================== FACE ENROLLMENT ====================
 
 @app.post("/api/enrollment/start")
-async def start_enrollment(person_name: str):
+async def start_enrollment(person_name: str = Query(...)):
     """Start face enrollment for a new person."""
     if not face_recognizer:
         raise HTTPException(status_code=503, detail="System not ready")
@@ -300,7 +301,7 @@ async def start_enrollment(person_name: str):
 
 
 @app.post("/api/enrollment/capture")
-async def capture_enrollment_sample(enrollment_id: str):
+async def capture_enrollment_sample(enrollment_id: str = Query(...)):
     """Capture a sample during enrollment process."""
     if not video_capture or not face_recognizer:
         raise HTTPException(status_code=503, detail="System not ready")
@@ -314,12 +315,14 @@ async def capture_enrollment_sample(enrollment_id: str):
     return {
         "enrollment_id": enrollment_id,
         "success": success,
-        "samples_collected": face_recognizer.get_enrollment_samples(enrollment_id)
+        "status": "captured" if success else "failed",
+        "samples_collected": face_recognizer.get_enrollment_samples(enrollment_id),
+        "images_collected": face_recognizer.get_enrollment_samples(enrollment_id)
     }
 
 
 @app.post("/api/enrollment/complete")
-async def complete_enrollment(enrollment_id: str):
+async def complete_enrollment(enrollment_id: str = Query(...)):
     """Complete face enrollment and save to database."""
     if not face_recognizer or not database_service:
         raise HTTPException(status_code=503, detail="System not ready")
